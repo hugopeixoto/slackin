@@ -5,22 +5,22 @@ import "net/url"
 import "encoding/json"
 import "errors"
 
-type Slack struct {
-	Host  string
-	Token string
-	Name  string
-}
-
 type InviteData struct {
 	Error string `json:"error"`
 }
 
-func (s Slack) Invite(email string) error {
-	path := "https://" + s.Host + ".slack.com/api/users.admin.invite"
+type PresenceData struct {
+	Members []struct {
+		Presence string `json:"presence"`
+	} `json:"members"`
+}
+
+func Invite(name string, token string, email string) error {
+	path := "https://" + name + ".slack.com/api/users.admin.invite"
 
 	resp, err := http.PostForm(path, url.Values{
 		"email":      {email},
-		"token":      {s.Token},
+		"token":      {token},
 		"set_active": {"true"},
 	})
 
@@ -40,17 +40,11 @@ func (s Slack) Invite(email string) error {
 	return nil
 }
 
-type PresenceData struct {
-	Members []struct {
-		Presence string `json:"presence"`
-	} `json:"members"`
-}
-
-func (s *Slack) TotalUsers() (int, int, error) {
-	path := "https://" + s.Host + ".slack.com/api/users.list"
+func TotalUsers(name string, token string) (int, int, error) {
+	path := "https://" + name + ".slack.com/api/users.list"
 
 	resp, err := http.PostForm(path, url.Values{
-		"token":    {s.Token},
+		"token":    {token},
 		"presence": {"1"},
 	})
 

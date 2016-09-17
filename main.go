@@ -7,27 +7,42 @@ import (
 	"os"
 )
 
-type Slackin struct {
-	Slack Slack
+type SlackInfo struct {
+	Name        string `json:"name"`
+	Token       string `json:"token"`
+	DisplayName string `json:"display_name"`
+	Hostname    string `json:"hostname"`
 }
 
 type Settings struct {
-	Listen string `json:"listen"`
-	Name   string `json:"name"`
-	Host   string `json:"host"`
-	Key    string `json:"key"`
+	Listen string      `json:"listen"`
+	Slacks []SlackInfo `json:"slacks"`
 }
 
-func (si *Slackin) ShowIndex(w http.ResponseWriter, r *http.Request) {
+func SlackScope(settings Settings, fn func(SlackInfo, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		for _, s := range settings.Slacks {
+			if s.Hostname == r.Host {
+				fn(s, w, r)
+				return
+			}
+		}
+
+		w.WriteHeader(404)
+		w.Write([]byte(`nope`))
+	}
+}
+
+func ShowIndex(si SlackInfo, w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		w.WriteHeader(404)
 		return
 	}
 
-	RenderForm(si.Slack, w)
+	RenderForm(si, w)
 }
 
-func (si *Slackin) RequestInvite(w http.ResponseWriter, r *http.Request) {
+func RequestInvite(si SlackInfo, w http.ResponseWriter, r *http.Request) {
 	if r.RequestURI != "/request-invite" {
 		w.WriteHeader(404)
 		return
@@ -38,11 +53,11 @@ func (si *Slackin) RequestInvite(w http.ResponseWriter, r *http.Request) {
 	email := r.PostForm.Get("email")
 
 	log.Printf("[%v] requesting invite\n", email)
-	err := si.Slack.Invite(email)
+	err := Invite(si.Name, si.Token, email)
 
 	if err == nil {
 		log.Printf("[%v] OK\n", email)
-		RenderSuccess(si.Slack, w)
+		RenderSuccess(si, w)
 	} else {
 		log.Printf("[%v] error: %v\n", email, err)
 		body := ``
@@ -56,7 +71,7 @@ func (si *Slackin) RequestInvite(w http.ResponseWriter, r *http.Request) {
 		default:
 			body = `Internal server error. Please try again later`
 		}
-		RenderError(si.Slack, w, body)
+		RenderError(si, w, body)
 	}
 }
 
@@ -74,16 +89,8 @@ func main() {
 	settings := Settings{}
 	ReadJSON("config/settings.json", &settings)
 
-	si := Slackin{
-		Slack{
-			settings.Host,
-			settings.Key,
-			settings.Name,
-		},
-	}
-
-	http.HandleFunc("/", si.ShowIndex)
-	http.HandleFunc("/request-invite", si.RequestInvite)
+	http.HandleFunc("/", SlackScope(settings, ShowIndex))
+	http.HandleFunc("/request-invite", SlackScope(settings, RequestInvite))
 
 	log.Fatal(http.ListenAndServe(settings.Listen, nil))
 }

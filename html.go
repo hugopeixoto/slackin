@@ -37,22 +37,22 @@ func css() string {
   `
 }
 
-func header(slack Slack) string {
-	users, active, _ := slack.TotalUsers()
+func header(slack SlackInfo) string {
+	users, active, _ := TotalUsers(slack.Name, slack.Token)
 
 	return `
 <html>
   <head>
-    <title>Join ` + slack.Name + ` on Slack!</title>
+    <title>Join ` + slack.DisplayName + ` on Slack!</title>
     <meta
       name="viewport"
       content="width=device-width,initial-scale=1.0,minimum-scale=1.0,user-scalable=no">
   </head>
   <div class="splash">
     <div class="logos">
-      <img class="logo org" src="/banner.png" />
+      <img class="logo org" src="/banners/` + slack.Name + `.png" />
     </div>
-    <p>Join <b>` + slack.Name + `</b> on Slack.</p>
+    <p>Join <b>` + slack.DisplayName + `</b> on Slack.</p>
     <p class="status">
       <b class="active">` + fmt.Sprintf("%v", active) + `</b>
       users online now of
@@ -61,26 +61,26 @@ func header(slack Slack) string {
     </p>`
 }
 
-func footer(slack Slack) string {
+func footer(slack SlackInfo) string {
 	return `
-    <p class="signin">or <a href="https://` + slack.Host + `.slack.com" target="_top">sign in</a>.</p>
+    <p class="signin">or <a href="https://` + slack.Name + `.slack.com" target="_top">sign in</a>.</p>
     <style>` + css() + `</style>
   </div>
 </html>
   `
 }
 
-func RenderBody(slack Slack, w http.ResponseWriter, body string) {
+func RenderBody(slack SlackInfo, w http.ResponseWriter, body string) {
 	html := header(slack) + body + footer(slack)
 	w.Write([]byte(html))
 }
 
-func RenderSuccess(slack Slack, w http.ResponseWriter) {
+func RenderSuccess(slack SlackInfo, w http.ResponseWriter) {
 	RenderBody(slack, w,
 		`<div class='message success'>Sent! Check your inbox</div>`)
 }
 
-func RenderForm(slack Slack, w http.ResponseWriter) {
+func RenderForm(slack SlackInfo, w http.ResponseWriter) {
 	RenderBody(slack, w,
 		`<form action='/request-invite' method='POST'>
     <input name="email" type="email" placeholder="you@yourdomain.com" autofocus=true class="form-item" />
@@ -88,7 +88,7 @@ func RenderForm(slack Slack, w http.ResponseWriter) {
   </form>`)
 }
 
-func RenderError(slack Slack, w http.ResponseWriter, msg string) {
+func RenderError(slack SlackInfo, w http.ResponseWriter, msg string) {
 	RenderBody(slack, w,
 		`<div class='message error'>`+msg+`</div>`)
 }
