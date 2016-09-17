@@ -29,6 +29,7 @@ func SlackScope(settings Settings, fn func(SlackInfo, http.ResponseWriter, *http
 		}
 
 		w.WriteHeader(404)
+		log.Printf("[%v] no matching host\n", r.Host)
 		w.Write([]byte(`nope`))
 	}
 }
