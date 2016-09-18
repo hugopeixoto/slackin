@@ -1,6 +1,17 @@
 {
-  "host": "ptgamedev",
-  "key": "xoxp-1234567890-1234567890-12345678901-1234567890",
-  "name": "PT Game Dev",
-  "listen": ":3000"
+  "listen": ":3000",
+  "slacks": [
+    {
+      "hostname": "invite.ptgamedev.example.com",
+      "name": "ptgamedev",
+      "display_name": "PT Game Dev",
+      "token": "xoxp-1234567890-1234567890-12345678901-1234567890"
+    },
+    {
+      "hostname": "invite.pokegopt.com",
+      "name": "pokegopt",
+      "display_name": "Pokemon Go PT",
+      "token": "xoxp-0987654321-0987654321-10987654321-0987654321"
+    }
+  ]
 }
